@@ -1,0 +1,22 @@
+{
+    "type": "split",
+    "feature": "scratch_count",
+    "threshold": 0.5,
+    "left": {
+        "type": "split",
+        "feature": "total_objects",
+        "threshold": 0.5,
+        "left": {
+            "type": "leaf",
+            "class": 0
+        },
+        "right": {
+            "type": "leaf",
+            "class": 1
+        }
+    },
+    "right": {
+        "type": "leaf",
+        "class": 0
+    }
+}

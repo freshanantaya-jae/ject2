@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PYNQ-Z2 Aluminum Quality Inspection System</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            --accent: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Style */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 2rem;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px var(--primary-glow));
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #d1d5db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 1px solid var(--card-border);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.5;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Video Feed Container */
+        .video-container {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            box-shadow: 0 4px 15px var(--primary-glow);
+            flex: 2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: transform 0.5s ease;
+        }
+
+        .btn-primary:hover::after {
+            transform: translate(10%, 10%) rotate(45deg);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        /* Toggle Button styling */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Results Panel */
+        .result-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            min-height: 180px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .result-badge {
+            font-size: 2.5rem;
+            font-weight: 800;
+            padding: 0.5rem 2.5rem;
+            border-radius: 50px;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+            animation: pulse-badge 2s infinite;
+        }
+
+        .badge-ready {
+            background: rgba(156, 163, 175, 0.15);
+            color: var(--text-muted);
+            border: 2px solid var(--text-muted);
+            animation: none;
+        }
+
+        .badge-pass {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 2px solid var(--success);
+            box-shadow: 0 0 25px var(--success-glow);
+        }
+
+        .badge-fail {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            box-shadow: 0 0 25px var(--danger-glow);
+        }
+
+        .fail-reason {
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        /* ML Features Display styling */
+        .ml-features-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.2rem;
+        }
+
+        .ml-features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .ml-feature-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 0.6rem;
+            text-align: center;
+        }
+
+        .ml-feature-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .ml-feature-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        /* Detail List */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .detail-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .detail-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tag-class {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .tag-scratch { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .tag-m3 { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-m4 { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .tag-m5 { background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
+        .tag-m6 { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-invalid { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .stat-icon.primary { color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+        .stat-icon.success { color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .stat-icon.danger { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        .stat-icon.warning { color: var(--accent); background: rgba(139, 92, 246, 0.1); }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* History Table Section */
+        .history-section {
+            margin-top: 2rem;
+        }
+
+        .history-table-container {
+            overflow-x: auto;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 0.9rem 1.2rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .history-table td {
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+        }
+
+        .history-table tr:hover {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .history-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        .h-badge-pass { background-color: rgba(16, 185, 129, 0.12); color: var(--success); }
+        .h-badge-fail { background-color: rgba(239, 68, 68, 0.12); color: var(--danger); }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-badge {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Scanline Animation overlay for camera */
+        .scanline {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(59, 130, 246, 0.3);
+            position: absolute;
+            left: 0;
+            top: 0;
+            animation: scan 4s linear infinite;
+            z-index: 10;
+            pointer-events: none;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo-area">
+                <i class="fa-solid fa-microchip logo-icon"></i>
+                <div>
+                    <h1>PYNQ-Z2 Quality Inspection System</h1>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">ระบบตรวจสอบคุณภาพแผ่นอะลูมิเนียมด้วย YOLOv8n & Machine Learning</p>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                <span>บอร์ด PYNQ: เชื่อมต่อ (Active)</span>
+            </div>
+        </header>
+
+        <!-- Stats Overview Row -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                    <div class="stat-label">ตรวจสอบทั้งหมด</div>
+                    <div class="stat-value" id="stat-total">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <div class="stat-label">ผ่านเกณฑ์ (PASS)</div>
+                    <div class="stat-value" id="stat-passed">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon danger">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <div>
+                    <div class="stat-label">ชำรุด (FAIL)</div>
+                    <div class="stat-value" id="stat-failed">0</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+                <div>
+                    <div class="stat-label">อัตราการผ่าน</div>
+                    <div class="stat-value" id="stat-rate">0.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Content Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Side: Live Feed & Controls -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>กล้องถ่ายภาพชิ้นงาน (Webcam Feed)</span>
+                    </div>
+                </div>
+                
+                <div class="video-container">
+                    <div class="scanline"></div>
+                    <img id="video-feed-src" class="video-feed" src="/video_feed" alt="Video stream">
+                </div>
+
+                <div class="control-panel">
+                    <div class="toggle-container">
+                        <span style="font-size: 0.9rem; font-weight: 500;">
+                            <i class="fa-solid fa-bug" style="color: var(--accent); margin-right: 0.3rem;"></i>
+                            จำลองรอยขีดข่วนชำรุด (Mock Scratch for Testing)
+                        </span>
+                        <label class="switch">
+                            <input type="checkbox" id="mock-scratch-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="btn-inspect">
+                            <i class="fa-solid fa-expand-arrows-alt"></i> ตรวจสอบชิ้นงาน (Inspect)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Inspection Results -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>ผลการประเมินชิ้นงานล่าสุด (Inspection Result)</span>
+                    </div>
+                </div>
+
+                <div class="result-display" id="result-container">
+                    <div class="result-badge badge-ready" id="status-badge">READY</div>
+                    <div style="color: var(--text-muted);" id="result-message">กรุณาวางชิ้นงานและกดปุ่มตรวจตรวจสอบ</div>
+                    <div class="fail-reason" id="fail-reason-box" style="display: none;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> <span id="fail-reason-text">พบรอยขีดข่วนชำรุดบนพื้นผิว</span>
+                    </div>
+                </div>
+
+                <!-- Machine Learning Feature Vector display -->
+                <div class="ml-features-container">
+                    <div class="card-title" style="font-size: 1rem;">
+                        <i class="fa-solid fa-brain" style="color:var(--accent)"></i>
+                        <span>คุณลักษณะที่ส่งต่อให้ Machine Learning (Features Vector)</span>
+                    </div>
+                    <div class="ml-features-grid">
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-scratch" style="color:var(--danger)">0</div>
+                            <div class="ml-feature-label">Scratches</div>
+                        </div>
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-m3">0</div>
+                            <div class="ml-feature-label">M3 Holes</div>
+                        </div>
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-m4">0</div>
+                            <div class="ml-feature-label">M4 Holes</div>
+                        </div>
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-m5">0</div>
+                            <div class="ml-feature-label">M5 Holes</div>
+                        </div>
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-m6">0</div>
+                            <div class="ml-feature-label">M6 Holes</div>
+                        </div>
+                        <div class="ml-feature-item">
+                            <div class="ml-feature-val" id="feat-conf" style="color:var(--success)">-</div>
+                            <div class="ml-feature-label">Avg Conf</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dimension Details -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="card-title" style="font-size: 1.05rem;">
+                        <i class="fa-solid fa-bullseye"></i>
+                        <span>วัตถุที่ YOLOv8n ตรวจจับได้ (Detected Objects)</span>
+                    </div>
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>ประเภทวัตถุ</th>
+                                <th>ความมั่นใจ (Conf)</th>
+                                <th>ขอบเขตพิกเซล [x1, y1, x2, y2]</th>
+                            </tr>
+                        </thead>
+                        <tbody id="measurements-tbody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--text-muted);">ไม่มีข้อมูลผลการตรวจวัด</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Log Section -->
+        <div class="card history-section">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-history"></i>
+                    <span>ประวัติการตรวจสอบล่าสุด (Recent History Logs)</span>
+                </div>
+                <button class="btn btn-secondary" id="btn-clear-history" style="padding: 0.4rem 1rem; font-size: 0.8rem;">
+                    <i class="fa-solid fa-refresh"></i> รีเฟรชประวัติ
+                </button>
+            </div>
+            <div class="history-table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>วัน-เวลาที่ตรวจ</th>
+                            <th>สถานะการประเมิน (ML)</th>
+                            <th>รอยขีดข่วน</th>
+                            <th>จำนวนรู</th>
+                            <th>รายละเอียดคลาสรู</th>
+                            <th>หมายเหตุการชำรุด</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted);">กำลังโหลดประวัติ...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script file -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // DOM Elements
+            const btnInspect = document.getElementById("btn-inspect");
+            const btnRefreshHistory = document.getElementById("btn-clear-history");
+            const mockScratchToggle = document.getElementById("mock-scratch-toggle");
+            
+            const statusBadge = document.getElementById("status-badge");
+            const resultMessage = document.getElementById("result-message");
+            const failReasonBox = document.getElementById("fail-reason-box");
+            const failReasonText = document.getElementById("fail-reason-text");
+            const measurementsTbody = document.getElementById("measurements-tbody");
+            const historyTbody = document.getElementById("history-tbody");
+            const videoFeedImg = document.getElementById("video-feed-src");
+
+            // ML feature vector DOM Elements
+            const featScratch = document.getElementById("feat-scratch");
+            const featM3 = document.getElementById("feat-m3");
+            const featM4 = document.getElementById("feat-m4");
+            const featM5 = document.getElementById("feat-m5");
+            const featM6 = document.getElementById("feat-m6");
+            const featConf = document.getElementById("feat-conf");
+
+            // Stats Elements
+            const statTotal = document.getElementById("stat-total");
+            const statPassed = document.getElementById("stat-passed");
+            const statFailed = document.getElementById("stat-failed");
+            const statRate = document.getElementById("stat-rate");
+
+            // Load stats and history on startup
+            loadStats();
+            loadHistory();
+
+            // Trigger Inspection
+            btnInspect.addEventListener("click", function() {
+                btnInspect.disabled = true;
+                btnInspect.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
+                
+                const isMockScratch = mockScratchToggle.checked;
+
+                fetch('/inspect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mock_scratch: isMockScratch })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update main image source to show annotated image temporarily
+                    videoFeedImg.src = data.image;
+
+                    // Switch image back to stream after 5 seconds
+                    setTimeout(() => {
+                        videoFeedImg.src = "/video_feed?time=" + new Date().getTime();
+                    }, 5000);
+
+                    // Update UI status and ML features
+                    updateInspectionUI(data);
+
+                    btnInspect.disabled = false;
+                    btnInspect.innerHTML = '<i class="fa-solid fa-expand-arrows-alt"></i> ตรวจสอบชิ้นงาน (Inspect)';
+                    
+                    loadStats();
+                    loadHistory();
+                })
+                .catch(error => {
+                    console.error("Error inspecting:", error);
+                    alert("เกิดข้อผิดพลาดในการดึงค่าตรวจสอบ");
+                    btnInspect.disabled = false;
+                    btnInspect.innerHTML = '<i class="fa-solid fa-expand-arrows-alt"></i> ตรวจสอบชิ้นงาน (Inspect)';
+                });
+            });
+
+            btnRefreshHistory.addEventListener("click", function() {
+                loadHistory();
+                loadStats();
+            });
+
+            function updateInspectionUI(data) {
+                statusBadge.className = "result-badge";
+
+                if (data.status === "PASS") {
+                    statusBadge.classList.add("badge-pass");
+                    statusBadge.innerText = "PASS";
+                    resultMessage.innerText = "แผ่นอะลูมิเนียมผ่านมาตรฐานคุณภาพ (พยากรณ์ด้วย ML)";
+                    failReasonBox.style.display = "none";
+                } else {
+                    statusBadge.classList.add("badge-fail");
+                    statusBadge.innerText = "FAIL";
+                    resultMessage.innerText = "ชิ้นงานตกเกณฑ์มาตรฐานคุณภาพ (พยากรณ์ด้วย ML)";
+                    failReasonText.innerText = data.fail_reason;
+                    failReasonBox.style.display = "block";
+                }
+
+                // Update ML feature metrics
+                const mf = data.ml_features;
+                featScratch.innerText = mf.scratch_count;
+                featM3.innerText = mf.m3_count;
+                featM4.innerText = mf.m4_count;
+                featM5.innerText = mf.m5_count;
+                featM6.innerText = mf.m6_count;
+                featConf.innerText = (mf.avg_confidence * 100).toFixed(0) + "%";
+
+                // Render detected objects table
+                measurementsTbody.innerHTML = "";
+                let itemIdx = 1;
+                
+                // Add scratches to the table
+                if (data.scratch_detected) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${itemIdx++}</td>
+                        <td><span class="tag-class tag-scratch">รอยชำรุด (scratch)</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                    `;
+                    measurementsTbody.appendChild(tr);
+                }
+
+                // Add holes to the table
+                if (data.hole_count === 0 && !data.scratch_detected) {
+                    measurementsTbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--danger);">ไม่พบวัตถุหรือรูเจาะใด ๆ</td>
+                        </tr>
+                    `;
+                } else {
+                    data.holes_details.forEach((hole) => {
+                        let tagClass = `tag-class tag-${hole.name.toLowerCase()}`;
+                        const boxStr = `[${hole.box.join(', ')}]`;
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${itemIdx++}</td>
+                            <td><span class="${tagClass}">${hole.name}</span></td>
+                            <td>${(hole.confidence * 100).toFixed(0)}%</td>
+                            <td><code style="color:var(--text-muted); font-size:0.8rem">${boxStr}</code></td>
+                        `;
+                        measurementsTbody.appendChild(tr);
+                    });
+                }
+            }
+
+            // Fetch and update statistic cards
+            function loadStats() {
+                fetch('/stats')
+                .then(res => res.json())
+                .then(data => {
+                    statTotal.innerText = data.total;
+                    statPassed.innerText = data.passed;
+                    statFailed.innerText = data.failed;
+                    statRate.innerText = data.pass_rate.toFixed(1) + "%";
+                });
+            }
+
+            // Fetch and render historical table logs
+            function loadHistory() {
+                fetch('/history')
+                .then(res => res.json())
+                .then(data => {
+                    historyTbody.innerHTML = "";
+                    if (data.length === 0) {
+                        historyTbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: var(--text-muted);">ไม่มีบันทึกประวัติการตรวจสอบ</td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const tr = document.createElement("tr");
+                        const statusClass = item.status === "PASS" ? "h-badge-pass" : "h-badge-fail";
+                        const scratchText = item.scratch_detected ? '<span style="color:var(--danger)">พบ</span>' : '<span style="color:var(--success)">ไม่พบ</span>';
+                        
+                        // Parse JSON sizes and classes
+                        const classesText = item.classification.length > 0 ? item.classification.map(c => {
+                            const clsLower = c.toLowerCase();
+                            return `<span class="tag-class tag-${clsLower}" style="font-size:0.75rem; padding:0.1rem 0.4rem; margin-right:2px">${c}</span>`;
+                        }).join("") : "-";
+
+                        tr.innerHTML = `
+                            <td><strong>#${item.id}</strong></td>
+                            <td>${formatDateTime(item.timestamp)}</td>
+                            <td><span class="history-status-badge ${statusClass}">${item.status}</span></td>
+                            <td>${scratchText}</td>
+                            <td>${item.hole_count}</td>
+                            <td>${classesText}</td>
+                            <td style="color:#f87171">${item.fail_reason || "-"}</td>
+                        `;
+                        historyTbody.appendChild(tr);
+                    });
+                });
+            }
+
+            // Format sqlite ISO timestamp to local readable time
+            function formatDateTime(isoString) {
+                const date = new Date(isoString);
+                return date.toLocaleString('th-TH', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        });
+    </script>
+</body>
+</html>
